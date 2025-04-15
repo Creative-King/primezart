@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  role           String   @default("user")
+  accountNumber  String   @unique
+  balance        Float    @default(0)
+  fullName       String?
+  location       String?
+
+  createdAt      DateTime @default(now())
+
+  FormSubmission     FormSubmission[]
+  Transfer           Transfer[]
+  CryptoTransaction  CryptoTransaction[]
+  Investment         Investment[]
+}
+
+model Transfer {
+  id            String   @id @default(cuid())
+  senderId      String
+  receiverName  String
+  receiverBank  String
+  amount        Float
+  type          String
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [senderId], references: [id])
+}
+
+model CryptoTransaction {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String
+  crypto     String
+  amount     Float
+  toAddress  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Investment {
+  id         String   @id @default(cuid())
+  userId     String
+  amount     Float
+  plan       String
+  duration   Int
+  startDate  DateTime @default(now())
+  status     String   @default("active")
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model FormSubmission {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String
+  createdAt DateTime @default(now())
+}
+
+model DepositSettings {
+  id         String   @id @default(cuid())
+  type       String
+  label      String
+  address    String
+  barcodeUrl String?
+  updatedAt  DateTime @updatedAt
+}

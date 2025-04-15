@@ -659,4 +659,3 @@ export function CryptoTransferCard() {
     </>
   )
 }
-

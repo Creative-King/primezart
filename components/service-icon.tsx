@@ -15,4 +15,3 @@ export function ServiceIcon({ icon: Icon, label }: ServiceIconProps) {
     </div>
   )
 }
-

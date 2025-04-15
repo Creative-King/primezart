@@ -121,4 +121,3 @@ export default function AccountWelcomeScreen({
     </motion.div>
   )
 }
-

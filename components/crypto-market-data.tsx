@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { ArrowDownIcon, ArrowUpIcon, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -63,6 +63,41 @@ export function CryptoMarketData() {
   const [cryptoData, setCryptoData] = useState(initialCryptoData)
   const [isLoading, setIsLoading] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [scrollPosition, setScrollPosition] = useState(0)
+  const [scrollWidth, setScrollWidth] = useState(0)
+  const [containerWidth, setContainerWidth] = useState(0)
+  const animationRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const scrollContainer = scrollRef.current
+    if (!scrollContainer) return
+
+    const scrollWidth = scrollContainer.scrollWidth
+    const clientWidth = scrollContainer.clientWidth
+
+    if (scrollWidth <= clientWidth) return
+
+    const animateScroll = () => {
+      setScrollPosition((prev) => {
+        const newPosition = prev + 1
+        if (newPosition >= scrollWidth - clientWidth) {
+          return 0
+        }
+        return newPosition
+      })
+    }
+
+    const interval = setInterval(animateScroll, 50)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollPosition
+    }
+  }, [scrollPosition])
 
   // This would be replaced with actual API calls in a production environment
   const refreshData = () => {
@@ -103,14 +138,63 @@ export function CryptoMarketData() {
   // Format large numbers with abbreviations (K, M, B)
   const formatLargeNumber = (value: number) => {
     if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(2)}B`
+      return `${(value / 1000000000).toFixed(2)}B`
     } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`
+      return `${(value / 1000000).toFixed(2)}M`
     } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(2)}K`
+      return `${(value / 1000).toFixed(2)}K`
     }
-    return `$${value.toFixed(2)}`
+    return `${value.toFixed(2)}`
   }
+
+  // Animation for scrolling ticker
+  // useEffect(() => {
+  //   if (!scrollRef.current) return
+
+  //   const scrollContainer = scrollRef.current
+  //   setScrollWidth(scrollContainer.scrollWidth)
+  //   setContainerWidth(scrollContainer.clientWidth)
+
+  //   const animate = () => {
+  //     setScrollPosition((prevPosition) => {
+  //       const newPosition = prevPosition + 0.5
+  //       // Reset when we've scrolled through all content
+  //       if (newPosition >= scrollWidth) {
+  //         return 0
+  //       }
+  //       return newPosition
+  //     })
+  //     animationRef.current = requestAnimationFrame(animate)
+  //   }
+
+  //   animationRef.current = requestAnimationFrame(animate)
+
+  //   return () => {
+  //     if (animationRef.current) {
+  //       cancelAnimationFrame(animationRef.current)
+  //     }
+  //   }
+  // }, [scrollWidth])
+
+  // Update scroll position
+  // useEffect(() => {
+  //   if (scrollRef.current) {
+  //     scrollRef.current.scrollLeft = scrollPosition
+  //   }
+  // }, [scrollPosition])
+
+  // Handle resize to recalculate widths
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     if (scrollRef.current) {
+  //       setScrollWidth(scrollRef.current.scrollWidth)
+  //       setContainerWidth(scrollRef.current.clientWidth)
+  //     }
+  //   }
+
+  //   window.addEventListener('resize', handleResize)
+  //   return () => window.removeEventListener('resize', handleResize)
+  // }, [])
 
   return (
     <Card className="border-0 shadow-sm">
@@ -127,6 +211,24 @@ export function CryptoMarketData() {
         </div>
       </CardHeader>
       <CardContent className="pb-2">
+        {/* Animated ticker */}
+        <div className="flex space-x-8 overflow-x-auto pb-2 no-scrollbar" ref={scrollRef}>
+          {cryptoData.map((coin, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <span className="text-white font-medium">{coin.name}</span>
+              <span className="text-white font-bold">{formatCurrency(coin.price).replace("$", "")}</span>
+              <span className={coin.change24h > 0 ? "text-green-400" : "text-red-400"}>
+                {coin.change24h > 0 ? (
+                  <ArrowUpIcon className="inline h-3 w-3 mr-1" />
+                ) : (
+                  <ArrowDownIcon className="inline h-3 w-3 mr-1" />
+                )}
+                {Math.abs(coin.change24h)}%
+              </span>
+            </div>
+          ))}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -181,4 +283,3 @@ export function CryptoMarketData() {
     </Card>
   )
 }
-

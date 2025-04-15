@@ -276,4 +276,3 @@ export function AnalyticsFooter({ accountType }: AnalyticsFooterProps) {
     </div>
   )
 }
-

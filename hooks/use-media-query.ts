@@ -23,4 +23,3 @@ export const useMediaQuery = (query: string): boolean => {
 
   return matches
 }
-

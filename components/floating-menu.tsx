@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import {
   Menu,
   X,
@@ -40,8 +40,11 @@ import {
   Zap,
   LineChart,
   Users,
+  ArrowLeftRight,
+  LayoutGrid,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
 
 // Account types with their icons and features
 const accountTypes = [
@@ -84,17 +87,15 @@ const accountTypes = [
       {
         id: "portfolio",
         label: "Portfolio",
-        icon: <PiggyBank className="h-5 w-5" />,
+        icon: <PieChart className="h-5 w-5" />,
         href: "/dashboard/investment/portfolio",
       },
-      { id: "trade", label: "Trade", icon: <ArrowDownLeft className="h-5 w-5" />, href: "/dashboard/investment/trade" },
       {
         id: "deposit",
         label: "Deposit",
         icon: <Download className="h-5 w-5" />,
         href: "/dashboard/investment/deposit",
       },
-      { id: "withdraw", label: "Withdraw", icon: <Send className="h-5 w-5" />, href: "/dashboard/investment/withdraw" },
       {
         id: "international",
         label: "International",
@@ -165,9 +166,14 @@ const accountTypes = [
     icon: <PiggyBank className="h-5 w-5" />,
     features: [
       { id: "dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" />, href: "/dashboard/savings" },
-      { id: "accounts", label: "Accounts", icon: <Wallet className="h-5 w-5" />, href: "/dashboard/accounts" },
       { id: "transfer", label: "Transfer", icon: <Send className="h-5 w-5" />, href: "/dashboard/transfer" },
       { id: "deposit", label: "Deposit", icon: <Download className="h-5 w-5" />, href: "/dashboard/deposit" },
+      {
+        id: "add-funds",
+        label: "Add Funds",
+        icon: <Plus className="h-5 w-5" />,
+        href: "/dashboard/savings/add-funds",
+      },
       {
         id: "goals",
         label: "Savings Goals",
@@ -201,8 +207,6 @@ const accountTypes = [
     icon: <Users className="h-5 w-5" />,
     features: [
       { id: "dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" />, href: "/dashboard/joint" },
-      { id: "accounts", label: "Accounts", icon: <Wallet className="h-5 w-5" />, href: "/dashboard/accounts" },
-      { id: "cards", label: "Cards", icon: <CreditCard className="h-5 w-5" />, href: "/dashboard/cards" },
       { id: "transfer", label: "Transfer", icon: <Send className="h-5 w-5" />, href: "/dashboard/transfer" },
       { id: "deposit", label: "Deposit", icon: <Download className="h-5 w-5" />, href: "/dashboard/deposit" },
       {
@@ -210,6 +214,12 @@ const accountTypes = [
         label: "Manage Users",
         icon: <UserPlus className="h-5 w-5" />,
         href: "/dashboard/joint/users",
+      },
+      {
+        id: "add-owner",
+        label: "Add Owner",
+        icon: <UserPlus className="h-5 w-5" />,
+        href: "/dashboard/joint/add-owner",
       },
       {
         id: "transactions",
@@ -358,6 +368,7 @@ const businessMenuItems = [
 
 export default function FloatingMenu() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [currentAccount, setCurrentAccount] = useState<string | null>(null)
   const [switchingAccount, setSwitchingAccount] = useState(false)
@@ -461,6 +472,7 @@ export default function FloatingMenu() {
         return "bg-yellow-100 text-yellow-600"
       case "deposit":
       case "receive":
+      case "add-funds":
         return "bg-green-100 text-green-600"
       case "transfer":
       case "withdraw":
@@ -468,9 +480,66 @@ export default function FloatingMenu() {
         return "bg-orange-100 text-orange-600"
       case "stocks":
         return "bg-cyan-100 text-cyan-600"
+      case "manage-users":
+      case "add-owner":
+        return "bg-indigo-100 text-indigo-600"
       default:
         return "bg-gray-100 text-gray-600"
     }
+  }
+
+  const renderMenuItems = () => {
+    const isPersonalOrBusiness = pathname.includes("/dashboard/checking") || pathname.includes("/dashboard/business")
+    const isJointAccount = pathname.includes("/dashboard/joint")
+
+    return (
+      <>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20"
+          onClick={() => router.push("/dashboard/transfer")}
+        >
+          <ArrowLeftRight className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20"
+          onClick={() => router.push("/dashboard/deposit")}
+        >
+          <PiggyBank className="h-5 w-5" />
+        </Button>
+        {isPersonalOrBusiness && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20"
+            onClick={() => router.push("/dashboard/cards")}
+          >
+            <CreditCard className="h-5 w-5" />
+          </Button>
+        )}
+        {!isJointAccount && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20"
+            onClick={() => router.push("/dashboard/accounts")}
+          >
+            <LayoutGrid className="h-5 w-5" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20"
+          onClick={() => router.push("/dashboard/settings")}
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+      </>
+    )
   }
 
   return (
@@ -613,4 +682,3 @@ export default function FloatingMenu() {
     </div>
   )
 }
-

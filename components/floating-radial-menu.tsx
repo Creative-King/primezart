@@ -347,4 +347,3 @@ export default function FloatingRadialMenu({ type = "personal" }: FloatingRadial
     </div>
   )
 }
-

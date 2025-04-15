@@ -352,16 +352,19 @@ export default function Dashboard() {
                     style={{ background: "linear-gradient(135deg, #f0d080 0%, #deb350 100%)" }}
                   >
                     <div className="p-6 h-full flex flex-col justify-between">
-                      <div className="flex justify-between items-start">
-                        <div className="text-gray-800 font-bold text-lg">
-                          Primez<span className="text-[#001f3f]">art</span>
+                      <div className="flex items-center mb-4">
+                        <div className="card-chip"></div>
+                        <div>
+                          <span className="text-gray-800 font-bold text-sm">Primezart</span>
+                          <div className="text-gray-700 text-xs font-semibold -mt-1">GOLD STATUS</div>
                         </div>
-                        <div className="w-10 h-6 bg-[#f0d080] rounded-md border border-[#deb350]"></div>
+                        <div className="card-brand ml-auto">
+                          <div className="card-brand-circle blue"></div>
+                          <div className="card-brand-circle light-blue"></div>
+                        </div>
                       </div>
 
-                      <div className="mt-4">
-                        <div className="text-xl font-mono text-gray-800 mb-4 truncate">{accountData.cardNumber}</div>
-                      </div>
+                      <div className="text-xl font-mono text-gray-800 mb-4 truncate">{accountData.cardNumber}</div>
 
                       <div className="flex justify-between items-end">
                         <div>
@@ -411,6 +414,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+            <div className="text-center mt-2 text-sm text-gray-500">Click the card to flip</div>
           </div>
         </div>
 
@@ -570,6 +574,121 @@ export default function Dashboard() {
 
       {/* Floating Menu */}
       <FloatingMenu />
+
+      {/* Add custom CSS for the card */}
+      <style jsx global>{`
+        .flip-card {
+          perspective: 1000px;
+          height: 200px;
+        }
+        
+        .flip-card-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          text-align: left;
+          transition: transform 0.6s;
+          transform-style: preserve-3d;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+          border-radius: 16px;
+        }
+        
+        .is-flipped {
+          transform: rotateY(180deg);
+        }
+        
+        .flip-card-front, .flip-card-back {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          border-radius: 16px;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .flip-card-back {
+          transform: rotateY(180deg);
+        }
+        
+        .card-chip {
+          width: 40px;
+          height: 30px;
+          background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%);
+          border-radius: 5px;
+          margin-right: 10px;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .card-chip::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 3px;
+          right: 3px;
+          height: 7px;
+          background: rgba(0, 0, 0, 0.1);
+          transform: translateY(-50%);
+        }
+        
+        .card-chip::after {
+          content: "";
+          position: absolute;
+          top: 3px;
+          bottom: 3px;
+          left: 50%;
+          width: 7px;
+          background: rgba(0, 0, 0, 0.1);
+          transform: translateX(-50%);
+        }
+        
+        .card-brand {
+          display: flex;
+        }
+        
+        .card-brand-circle {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+        }
+        
+        .card-brand-circle.blue {
+          background-color: #0052cc;
+          opacity: 0.8;
+        }
+        
+        .card-brand-circle.light-blue {
+          background-color: #00b8d9;
+          opacity: 0.8;
+          margin-left: -12px;
+        }
+        
+        .magnetic-strip {
+          width: 100%;
+          height: 50px;
+          background-color: #111827;
+          margin: 20px 0;
+        }
+        
+        .signature-strip {
+          height: 40px;
+          background-color: white;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          padding: 0 10px;
+          margin: 0 12px;
+        }
+        
+        .flip-hint {
+          position: absolute;
+          right: 12px;
+          bottom: 12px;
+          opacity: 0.6;
+        }
+      `}</style>
     </div>
   )
 }
@@ -616,4 +735,3 @@ function EyeOff(props) {
     </svg>
   )
 }
-

@@ -180,11 +180,14 @@ export default function CardsPage() {
           <TabsTrigger value="virtual">Virtual Cards</TabsTrigger>
         </TabsList>
         <TabsContent value="physical" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2 sm:px-0">
             {filteredPhysicalCards.map((card) => (
-              <Card key={card.id} className="overflow-hidden">
+              <Card key={card.id} className="overflow-hidden max-w-[450px] mx-auto w-full">
                 <CardHeader className="p-0">
-                  <div className={`relative rounded-t-xl overflow-hidden h-48 bg-gradient-to-br ${card.color}`}>
+                  <div
+                    className={`relative rounded-t-xl overflow-hidden h-48 bg-gradient-to-br ${card.color}`}
+                    style={{ minHeight: "180px" }}
+                  >
                     {/* Bank logo at top */}
                     <div className="absolute top-4 left-4 flex items-center">
                       <Image
@@ -204,8 +207,8 @@ export default function CardsPage() {
                       </Badge>
                     </div>
 
-                    {/* Chip */}
-                    <div className="absolute top-16 left-4">
+                    {/* Chip - moved to right side */}
+                    <div className="absolute top-16 right-16">
                       <div className="w-10 h-7 bg-[#d4af37] bg-opacity-80 rounded-md border border-[#c4a137] shadow-inner"></div>
                     </div>
 
@@ -238,7 +241,7 @@ export default function CardsPage() {
                       </p>
                     </div>
 
-                    {/* Mastercard logo */}
+                    {/* Mastercard logo - adjusted position */}
                     <div className="absolute bottom-12 right-4">
                       <div className="flex items-center">
                         <div className="w-6 h-6 rounded-full bg-red-500 opacity-80"></div>
@@ -247,13 +250,13 @@ export default function CardsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex justify-between items-center mb-4">
                     <div>
                       <h3 className="font-semibold">{card.name}</h3>
                       <p className="text-sm text-gray-500">
                         {card.type === "Credit"
-                          ? `Available Credit: $${card.limit - card.balance}`
+                          ? `Available Credit: ${card.limit - card.balance}`
                           : `Linked to ${card.linkedAccount}`}
                       </p>
                     </div>
@@ -295,11 +298,14 @@ export default function CardsPage() {
           </div>
         </TabsContent>
         <TabsContent value="virtual" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2 sm:px-0">
             {filteredVirtualCards.map((card) => (
-              <Card key={card.id} className="overflow-hidden">
+              <Card key={card.id} className="overflow-hidden max-w-[450px] mx-auto w-full">
                 <CardHeader className="p-0">
-                  <div className={`relative rounded-t-xl overflow-hidden h-48 bg-gradient-to-br ${card.color}`}>
+                  <div
+                    className={`relative rounded-t-xl overflow-hidden h-48 bg-gradient-to-br ${card.color}`}
+                    style={{ minHeight: "180px" }}
+                  >
                     {/* Bank logo at top */}
                     <div className="absolute top-4 left-4 flex items-center">
                       <Image
@@ -315,6 +321,11 @@ export default function CardsPage() {
                     {/* Virtual Badge */}
                     <div className="absolute top-4 right-4">
                       <Badge className="bg-purple-500 text-white">Virtual</Badge>
+                    </div>
+
+                    {/* Chip - moved to right side */}
+                    <div className="absolute top-16 right-16">
+                      <div className="w-10 h-7 bg-[#d4af37] bg-opacity-80 rounded-md border border-[#c4a137] shadow-inner"></div>
                     </div>
 
                     {/* Card Number */}
@@ -352,11 +363,11 @@ export default function CardsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex justify-between items-center mb-4">
                     <div>
                       <h3 className="font-semibold">{card.name}</h3>
-                      <p className="text-sm text-gray-500">{`Limit: $${card.limit}`}</p>
+                      <p className="text-sm text-gray-500">{`Limit: ${card.limit}`}</p>
                     </div>
                     <Badge
                       className={card.status === "Active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
@@ -530,4 +541,3 @@ export default function CardsPage() {
     </div>
   )
 }
-

@@ -2,775 +2,855 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Send, ArrowRight, Check, ArrowLeft, CreditCard, Building, Globe, BanknoteIcon, Clock } from "lucide-react"
+import { z } from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { ArrowLeft, Search, Building, DollarSign, Calendar, FileText, CheckCircle, Globe } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+
+// Define form schema
+const formSchema = z.object({
+  fromAccount: z.string().min(1, "Please select an account"),
+  transferType: z.enum(["domestic", "international"]),
+  recipientType: z.enum(["existing", "new"]),
+  recipient: z.string().optional(),
+  recipientName: z.string().min(1, "Recipient name is required").optional(),
+  recipientBank: z.string().min(1, "Bank name is required").optional(),
+  recipientAccountNumber: z.string().min(5, "Account number is required").optional(),
+  recipientRoutingNumber: z.string().min(9, "Routing number is required").optional(),
+  country: z.string().optional(),
+  swiftCode: z.string().optional(),
+  ibanNumber: z.string().optional(),
+  amount: z.string().min(1, "Amount is required"),
+  currency: z.string().default("USD"),
+  transferDate: z.string().min(1, "Transfer date is required"),
+  transferFrequency: z.string().default("once"),
+  transferPurpose: z.string().optional(),
+  memo: z.string().optional(),
+  saveRecipient: z.boolean().default(false),
+  feePaymentOption: z.enum(["sender", "recipient", "shared"]).default("sender"),
+})
+
+// Mock data for accounts
+const accounts = [
+  { id: "acc1", name: "Checking Account", number: "****1234", balance: 4638412.32 },
+  { id: "acc2", name: "Savings Account", number: "****5678", balance: 250000.0 },
+  { id: "acc3", name: "Investment Account", number: "****9012", balance: 1500000.0 },
+]
+
+// Mock data for recipients
+const recipients = [
+  { id: "rec1", name: "John Smith", bank: "Chase Bank", accountNumber: "****5678", routingNumber: "021000021" },
+  { id: "rec2", name: "Sarah Johnson", bank: "Bank of America", accountNumber: "****1234", routingNumber: "026009593" },
+  { id: "rec3", name: "Michael Brown", bank: "Wells Fargo", accountNumber: "****9012", routingNumber: "121000248" },
+]
+
+// Mock data for countries
+const countries = [
+  { code: "GB", name: "United Kingdom" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "JP", name: "Japan" },
+  { code: "CN", name: "China" },
+  { code: "AU", name: "Australia" },
+  { code: "CA", name: "Canada" },
+  { code: "IN", name: "India" },
+  { code: "BR", name: "Brazil" },
+  { code: "ZA", name: "South Africa" },
+  { code: "SG", name: "Singapore" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "MX", name: "Mexico" },
+  { code: "RU", name: "Russia" },
+  { code: "NG", name: "Nigeria" },
+  { code: "US", name: "United States" },
+]
+
+// Mock data for currencies
+const currencies = [
+  { code: "USD", name: "US Dollar" },
+  { code: "EUR", name: "Euro" },
+  { code: "GBP", name: "British Pound" },
+  { code: "JPY", name: "Japanese Yen" },
+  { code: "AUD", name: "Australian Dollar" },
+  { code: "CAD", name: "Canadian Dollar" },
+  { code: "CHF", name: "Swiss Franc" },
+  { code: "CNY", name: "Chinese Yuan" },
+]
+
+// Mock data for transfer purposes
+const transferPurposes = [
+  { id: "family", name: "Family Support" },
+  { id: "business", name: "Business Payment" },
+  { id: "education", name: "Education Fees" },
+  { id: "medical", name: "Medical Expenses" },
+  { id: "property", name: "Property Purchase" },
+  { id: "travel", name: "Travel Expenses" },
+  { id: "investment", name: "Investment" },
+  { id: "other", name: "Other" },
+]
 
 export default function TransferPage() {
   const router = useRouter()
-  const [isClient, setIsClient] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [transferType, setTransferType] = useState("local")
-  const [progress, setProgress] = useState(25)
-  const [accounts, setAccounts] = useState([])
-  const [amount, setAmount] = useState("")
-  const [recipientName, setRecipientName] = useState("")
-  const [accountNumber, setAccountNumber] = useState("")
-  const [routingNumber, setRoutingNumber] = useState("")
-  const [bankName, setBankName] = useState("")
-  const [description, setDescription] = useState("")
-  const [selectedAccountFrom, setSelectedAccountFrom] = useState("")
-  const [recentRecipients, setRecentRecipients] = useState([])
-  const [processing, setProcessing] = useState(false)
-  const [successful, setSuccessful] = useState(false)
-  const [transferReference, setTransferReference] = useState("")
-  const [transferFee, setTransferFee] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filteredRecipients, setFilteredRecipients] = useState(recipients)
+  const [exchangeRate, setExchangeRate] = useState(1)
+  const [convertedAmount, setConvertedAmount] = useState("")
 
-  // Initialize state for transfer date
-  const [scheduledDate, setScheduledDate] = useState("")
-  const [isScheduled, setIsScheduled] = useState(false)
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  // Initialize form
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fromAccount: "",
+      transferType: "domestic",
+      recipientType: "existing",
+      recipient: "",
+      recipientName: "",
+      recipientBank: "",
+      recipientAccountNumber: "",
+      recipientRoutingNumber: "",
+      country: "",
+      swiftCode: "",
+      ibanNumber: "",
+      amount: "",
+      currency: "USD",
+      transferDate: new Date().toISOString().split("T")[0],
+      transferFrequency: "once",
+      transferPurpose: "",
+      memo: "",
+      saveRecipient: false,
+      feePaymentOption: "sender",
+    },
+  })
 
-  // Add PIN validation to the form
-  // Add this state for PIN:
-  const [pin, setPin] = useState("")
-  const [pinError, setPinError] = useState("")
+  const transferType = form.watch("transferType")
+  const recipientType = form.watch("recipientType")
+  const selectedRecipient = form.watch("recipient")
+  const fromAccount = form.watch("fromAccount")
+  const amount = form.watch("amount")
+  const currency = form.watch("currency")
+  const country = form.watch("country")
 
-  // Mock recent recipients data
-  const mockRecentRecipients = [
-    {
-      id: 1,
-      name: "John Smith",
-      accountNumber: "****1234",
-      bank: "Chase Bank",
-      avatar: "JS",
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      accountNumber: "****5678",
-      bank: "Bank of America",
-      avatar: "SJ",
-    },
-    {
-      id: 3,
-      name: "Michael Rodriguez",
-      accountNumber: "****9012",
-      bank: "Wells Fargo",
-      avatar: "MR",
-    },
-    {
-      id: 4,
-      name: "Emily Chen",
-      accountNumber: "****3456",
-      bank: "Citibank",
-      avatar: "EC",
-    },
-  ]
-
+  // Filter recipients based on search query
   useEffect(() => {
-    setIsClient(true)
-    setRecentRecipients(mockRecentRecipients)
+    if (searchQuery) {
+      const filtered = recipients.filter(
+        (recipient) =>
+          recipient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          recipient.bank.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+      setFilteredRecipients(filtered)
+    } else {
+      setFilteredRecipients(recipients)
+    }
+  }, [searchQuery])
 
-    // Get account information from localStorage
-    if (typeof window !== "undefined") {
-      try {
-        const accountsData = localStorage.getItem("accounts")
-        if (accountsData) {
-          const parsedAccounts = JSON.parse(accountsData)
-          // Get account mode (personal or business)
-          const accountMode = localStorage.getItem("accountMode") || "personal"
-          // Filter accounts based on the account mode
-          const filteredAccounts = parsedAccounts.filter((acc) => acc.accountType === accountMode)
-          setAccounts(filteredAccounts)
-          if (filteredAccounts.length > 0) {
-            setSelectedAccountFrom(filteredAccounts[0].id)
-          }
-        }
-      } catch (e) {
-        console.error("Error loading accounts", e)
+  // Update form when recipient is selected
+  useEffect(() => {
+    if (recipientType === "existing" && selectedRecipient) {
+      const recipient = recipients.find((r) => r.id === selectedRecipient)
+      if (recipient) {
+        form.setValue("recipientName", recipient.name)
+        form.setValue("recipientBank", recipient.bank)
+        form.setValue("recipientAccountNumber", recipient.accountNumber)
+        form.setValue("recipientRoutingNumber", recipient.routingNumber)
       }
     }
-  }, [])
+  }, [recipientType, selectedRecipient, form])
 
-  // Handle step changes
-  const handleNextStep = () => {
-    if (currentStep === 1 && !validateStep1()) return
-    if (currentStep === 2 && !validateStep2()) return
-    if (currentStep === 3 && !validateStep3()) return
+  // Calculate exchange rate and converted amount
+  useEffect(() => {
+    if (amount && currency && currency !== "USD") {
+      // In a real app, you would fetch the exchange rate from an API
+      // For demo purposes, we'll use a mock exchange rate
+      const mockExchangeRates = {
+        USD: 1,
+        EUR: 0.92,
+        GBP: 0.79,
+        JPY: 150.25,
+        AUD: 1.52,
+        CAD: 1.37,
+        CHF: 0.89,
+        CNY: 7.24,
+      }
 
-    // Validate PIN before final confirmation
-    if (currentStep === 3) {
-      const storedPIN = localStorage.getItem("userPIN") || "1234" // Default for demo
-      if (pin !== storedPIN) {
-        setPinError("Invalid PIN. Please try again.")
-        return
+      const rate = mockExchangeRates[currency] || 1
+      setExchangeRate(rate)
+
+      const amountValue = Number.parseFloat(amount)
+      if (!isNaN(amountValue)) {
+        const converted = (amountValue * rate).toFixed(2)
+        setConvertedAmount(converted)
       }
     }
+  }, [amount, currency])
 
-    const newStep = currentStep + 1
-    setCurrentStep(newStep)
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true)
 
-    // Update progress bar
-    if (newStep === 2) setProgress(50)
-    if (newStep === 3) setProgress(75)
-    if (newStep === 4) setProgress(100)
+    try {
+      // In a real app, you would make an API call here
+      console.log("Form values:", values)
 
-    // For the confirmation step, simulate processing
-    if (newStep === 4) {
-      setProcessing(true)
-      // Generate a reference number
-      setTransferReference(`TRF${Math.floor(100000 + Math.random() * 900000)}`)
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      // Simulate processing delay
-      setTimeout(() => {
-        setProcessing(false)
-        setSuccessful(true)
-
-        // Update account balance if transfer is successful
-        if (selectedAccountFrom && amount) {
-          const updatedAccounts = accounts.map((acc) => {
-            if (acc.id === selectedAccountFrom) {
-              return {
-                ...acc,
-                balance: acc.balance - Number.parseFloat(amount) - transferFee,
-              }
-            }
-            return acc
-          })
-          setAccounts(updatedAccounts)
-
-          // Save updated accounts to localStorage
-          if (typeof window !== "undefined") {
-            localStorage.setItem("accounts", JSON.stringify(updatedAccounts))
-          }
-        }
-      }, 3000)
+      // Show confirmation
+      setShowConfirmation(true)
+    } catch (error) {
+      console.error("Error submitting form:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const handlePreviousStep = () => {
-    if (currentStep > 1) {
-      const newStep = currentStep - 1
-      setCurrentStep(newStep)
-
-      // Update progress bar
-      if (newStep === 1) setProgress(25)
-      if (newStep === 2) setProgress(50)
-      if (newStep === 3) setProgress(75)
-    }
+  const handleBackToDashboard = () => {
+    router.push("/dashboard")
   }
 
-  // Validate steps
-  const validateStep1 = () => {
-    if (!selectedAccountFrom) {
-      alert("Please select an account to transfer from")
-      return false
-    }
-    return true
-  }
-
-  const validateStep2 = () => {
-    if (!amount || Number.parseFloat(amount) <= 0) {
-      alert("Please enter a valid amount")
-      return false
-    }
-
-    // Check if the selected account has sufficient funds
-    const selectedAccount = accounts.find((acc) => acc.id === selectedAccountFrom)
-    if (selectedAccount && Number.parseFloat(amount) + transferFee > selectedAccount.balance) {
-      alert("Insufficient funds in the selected account")
-      return false
-    }
-
-    return true
-  }
-
-  const validateStep3 = () => {
-    if (!recipientName) {
-      alert("Please enter the recipient's name")
-      return false
-    }
-    if (!accountNumber) {
-      alert("Please enter the recipient's account number")
-      return false
-    }
-    if (transferType === "international" && !routingNumber) {
-      alert("Please enter the routing/SWIFT code")
-      return false
-    }
-    if (!bankName) {
-      alert("Please enter the bank name")
-      return false
-    }
-    if (isScheduled && !scheduledDate) {
-      alert("Please select a date for your scheduled transfer")
-      return false
-    }
-    if (!acceptedTerms) {
-      alert("Please accept the terms and conditions to proceed")
-      return false
-    }
-
-    return true
-  }
-
-  // Handle transfer type change
-  const handleTransferTypeChange = (type) => {
-    setTransferType(type)
-
-    // Check if international transfer is selected and user is not on business account
-    if (type === "international") {
-      const accountMode = localStorage.getItem("accountMode") || "personal"
-      if (accountMode !== "business") {
-        alert("International transfers are only available for business accounts. Please switch to a business account.")
-        setTransferType("local")
-        return
-      }
-    }
-
-    // Set transfer fee to 0 (removing fees)
-    setTransferFee(0)
-  }
-
-  // Handle recipient selection
-  const handleSelectRecipient = (recipient) => {
-    setRecipientName(recipient.name)
-    setAccountNumber(recipient.accountNumber)
-    setBankName(recipient.bank)
-  }
-
-  // Format currency
-  const formatCurrency = (value) => {
+  const formatCurrency = (amount: number, currencyCode = "USD") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
-    }).format(value)
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+    }).format(amount)
   }
 
-  // Get selected account details
-  const selectedAccount = accounts.find((acc) => acc.id === selectedAccountFrom)
+  const selectedAccountBalance = accounts.find((acc) => acc.id === fromAccount)?.balance || 0
 
-  if (!isClient) {
-    return null // Prevent hydration mismatch
+  if (showConfirmation) {
+    return (
+      <div className="container max-w-4xl mx-auto py-8 px-4">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center mb-2">
+              <CheckCircle className="h-8 w-8 text-green-500 mr-2" />
+              <CardTitle className="text-2xl">Transfer Successful</CardTitle>
+            </div>
+            <CardDescription>Your transfer has been successfully submitted.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">From Account</h3>
+                <p className="font-medium">
+                  {accounts.find((acc) => acc.id === form.getValues("fromAccount"))?.name} (
+                  {accounts.find((acc) => acc.id === form.getValues("fromAccount"))?.number})
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">To Recipient</h3>
+                <p className="font-medium">{form.getValues("recipientName")}</p>
+                <p className="text-sm text-gray-500">{form.getValues("recipientBank")}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Amount</h3>
+                <p className="font-medium text-lg">
+                  {formatCurrency(Number.parseFloat(form.getValues("amount")), form.getValues("currency"))}
+                </p>
+                {form.getValues("currency") !== "USD" && (
+                  <p className="text-sm text-gray-500">≈ {formatCurrency(Number.parseFloat(convertedAmount))}</p>
+                )}
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Transfer Date</h3>
+                <p className="font-medium">{form.getValues("transferDate")}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Reference Number</h3>
+                <p className="font-medium">TRF-{Math.floor(Math.random() * 1000000)}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500">Status</h3>
+                <p className="font-medium text-green-600">{transferType === "domestic" ? "Processed" : "Pending"}</p>
+                {transferType === "international" && (
+                  <p className="text-xs text-gray-500">International transfers typically take 2-5 business days</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={handleBackToDashboard}>
+              Back to Dashboard
+            </Button>
+            <Button onClick={() => router.push("/dashboard/transfer")}>Make Another Transfer</Button>
+          </CardFooter>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center mb-4">
-        <button
-          onClick={() => router.back()}
-          className="p-2 rounded-full hover:bg-gray-100 mr-2 flex items-center justify-center"
-        >
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
-          <span className="ml-1">Back</span>
-        </button>
-      </div>
-      {/* Progress bar */}
-      <div className="mb-8">
-        <div className="mb-2">
-          <Progress value={progress} className="h-2" />
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className={currentStep >= 1 ? "font-medium text-blue-700" : "text-gray-500"}>Select Account</span>
-          <span className={currentStep >= 2 ? "font-medium text-blue-700" : "text-gray-500"}>Amount</span>
-          <span className={currentStep >= 3 ? "font-medium text-blue-700" : "text-gray-500"}>Recipient</span>
-          <span className={currentStep >= 4 ? "font-medium text-blue-700" : "text-gray-500"}>Confirmation</span>
-        </div>
+    <div className="container max-w-4xl mx-auto py-8 px-4">
+      <div className="mb-6">
+        <Button variant="ghost" onClick={handleBackToDashboard} className="mb-2">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+        </Button>
+        <h1 className="text-2xl font-bold">Money Transfer</h1>
+        <p className="text-gray-500">Transfer money to domestic or international accounts</p>
       </div>
 
-      {/* Step 1: Select Account */}
-      {currentStep === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Send className="mr-2 h-5 w-5" />
-              Transfer Money
-            </CardTitle>
-            <CardDescription>Select the account you want to transfer from and the transfer type</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Source Account Selection */}
-            <div className="space-y-4">
-              <Label>From Account</Label>
-              {accounts.length > 0 ? (
-                <RadioGroup value={selectedAccountFrom} onValueChange={setSelectedAccountFrom}>
-                  {accounts.map((account) => (
-                    <div key={account.id} className="flex items-center space-x-2">
-                      <RadioGroupItem value={account.id} id={account.id} />
-                      <Label
-                        htmlFor={account.id}
-                        className="flex flex-1 items-center justify-between p-3 border rounded-md cursor-pointer"
-                      >
-                        <div>
-                          <p className="font-medium">{account.name}</p>
-                          <p className="text-sm text-gray-500">{account.number}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">{formatCurrency(account.balance)}</p>
-                          <Badge variant="outline">{account.type}</Badge>
-                        </div>
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              ) : (
-                <div className="p-4 border border-gray-200 rounded-md bg-gray-50 text-center">
-                  <p className="text-gray-500">No accounts available for transfer</p>
-                </div>
-              )}
-            </div>
-
-            {/* Transfer Type Selection */}
-            <div className="space-y-4">
-              <Label>Transfer Type</Label>
-              <Tabs defaultValue="local" onValueChange={handleTransferTypeChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="local" className="flex flex-col py-2">
-                    <CreditCard className="h-5 w-5 mb-1" />
-                    <span>Same Bank</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="interbank" className="flex flex-col py-2">
-                    <Building className="h-5 w-5 mb-1" />
-                    <span>Other Banks</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="international" className="flex flex-col py-2">
-                    <Globe className="h-5 w-5 mb-1" />
-                    <span>International</span>
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="local" className="pt-4">
-                  <p className="text-sm text-gray-600">
-                    Transfer to another account within our bank. No fees apply and transfers are typically instant.
-                  </p>
-                </TabsContent>
-                <TabsContent value="interbank" className="pt-4">
-                  <p className="text-sm text-gray-600">
-                    Transfer to an account at another bank. A small fee of $2.50 applies and transfers may take 1-2
-                    business days.
-                  </p>
-                </TabsContent>
-                <TabsContent value="international" className="pt-4">
-                  <p className="text-sm text-gray-600">
-                    Send money internationally. Fees apply ($25.00) and transfers may take 3-5 business days depending
-                    on the destination.
-                  </p>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button className="w-full" onClick={handleNextStep} disabled={accounts.length === 0}>
-              Next <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
-
-      {/* Step 2: Amount */}
-      {currentStep === 2 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Transfer Amount</CardTitle>
-            <CardDescription>Enter the amount you want to transfer</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <Label htmlFor="amount">Amount</Label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <BanknoteIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <Input
-                  id="amount"
-                  placeholder="0.00"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <p className="text-sm text-gray-500">
-                Available balance: {selectedAccount ? formatCurrency(selectedAccount.balance) : "N/A"}
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="What's this transfer for?"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handlePreviousStep}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-            <Button onClick={handleNextStep}>
-              Next <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
-
-      {/* Step 3: Recipient */}
-      {currentStep === 3 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recipient Details</CardTitle>
-            <CardDescription>Enter the recipient's banking information</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Recent Recipients */}
-            {recentRecipients.length > 0 && (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Transfer Details</CardTitle>
+              <CardDescription>Enter the details for your money transfer</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Transfer Type Selection */}
               <div className="space-y-4">
-                <Label>Recent Recipients</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {recentRecipients.map((recipient) => (
-                    <div
-                      key={recipient.id}
-                      className={`flex flex-col items-center text-center p-3 border rounded-md cursor-pointer hover:bg-gray-50 transition ${
-                        recipientName === recipient.name ? "border-blue-500 bg-blue-50" : ""
-                      }`}
-                      onClick={() => handleSelectRecipient(recipient)}
-                    >
-                      <Avatar className="h-12 w-12 mb-2">
-                        <AvatarFallback>{recipient.avatar}</AvatarFallback>
-                      </Avatar>
-                      <p className="font-medium text-sm">{recipient.name}</p>
-                      <p className="text-xs text-gray-500">{recipient.bank}</p>
-                    </div>
-                  ))}
-                </div>
+                <h3 className="text-lg font-medium">Transfer Type</h3>
+                <FormField
+                  control={form.control}
+                  name="transferType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Tabs
+                          defaultValue={field.value}
+                          onValueChange={(value) => field.onChange(value as "domestic" | "international")}
+                          className="w-full"
+                        >
+                          <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="domestic" className="flex items-center">
+                              <Building className="mr-2 h-4 w-4" />
+                              Domestic Transfer
+                            </TabsTrigger>
+                            <TabsTrigger value="international" className="flex items-center">
+                              <Globe className="mr-2 h-4 w-4" />
+                              International Transfer
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
 
-            {/* Recipient Information Form */}
-            <div className="space-y-4">
-              <Label htmlFor="recipientName">Recipient Name</Label>
-              <Input
-                id="recipientName"
-                placeholder="Full name as it appears on the account"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <Label htmlFor="accountNumber">Account Number</Label>
-              <Input
-                id="accountNumber"
-                placeholder="Account number"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value)}
-              />
-            </div>
-
-            {transferType === "international" && (
+              {/* From Account Section */}
               <div className="space-y-4">
-                <Label htmlFor="routingNumber">Routing/SWIFT Code</Label>
-                <Input
-                  id="routingNumber"
-                  placeholder="Enter routing or SWIFT code"
-                  value={routingNumber}
-                  onChange={(e) => setRoutingNumber(e.target.value)}
+                <h3 className="text-lg font-medium">From Account</h3>
+                <FormField
+                  control={form.control}
+                  name="fromAccount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Account</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an account" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {accounts.map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.name} ({account.number}) - {formatCurrency(account.balance)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <p className="text-xs text-gray-500">
-                  For international transfers, please ensure you enter the correct SWIFT/BIC code.
-                </p>
-              </div>
-            )}
 
-            <div className="space-y-4">
-              <Label htmlFor="bankName">Bank Name</Label>
-              <Input
-                id="bankName"
-                placeholder="Enter bank name"
-                value={bankName}
-                onChange={(e) => setBankName(e.target.value)}
-              />
-            </div>
-
-            {/* Scheduled Transfer Option */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="scheduleTransfer"
-                  checked={isScheduled}
-                  onChange={() => setIsScheduled(!isScheduled)}
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="scheduleTransfer" className="cursor-pointer">
-                  Schedule this transfer for a future date
-                </Label>
+                {fromAccount && (
+                  <div className="bg-blue-50 p-3 rounded-md">
+                    <p className="text-sm text-blue-800">
+                      Available Balance: <span className="font-bold">{formatCurrency(selectedAccountBalance)}</span>
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {isScheduled && (
-                <div className="ml-6 mt-2">
-                  <Label htmlFor="scheduleDate">Transfer Date</Label>
-                  <Input
-                    id="scheduleDate"
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="mt-1"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    <Clock className="inline-block h-3 w-3 mr-1" />
-                    Scheduled transfers will be processed at the beginning of the selected day.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Terms and Conditions */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="termsAndConditions"
-                  checked={acceptedTerms}
-                  onChange={() => setAcceptedTerms(!acceptedTerms)}
-                  className="rounded border-gray-300"
-                />
-                <Label htmlFor="termsAndConditions" className="cursor-pointer">
-                  I agree to the{" "}
-                  <a href="#" className="text-blue-600 hover:underline">
-                    terms and conditions
-                  </a>{" "}
-                  governing this transfer
-                </Label>
-              </div>
-              <p className="text-xs text-gray-500 ml-6">
-                By proceeding, you confirm that the recipient details are correct and you authorize this transfer.
-              </p>
-            </div>
-
-            {/* Add this PIN input field before the continue button: */}
-            <div className="space-y-2 mt-4">
-              <Label htmlFor="pin">Transaction PIN</Label>
-              <Input
-                id="pin"
-                type="password"
-                placeholder="Enter your PIN"
-                value={pin}
-                onChange={(e) => {
-                  setPin(e.target.value)
-                  setPinError("")
-                }}
-                maxLength={6}
-              />
-              {pinError && <p className="text-sm text-red-500">{pinError}</p>}
-              <p className="text-xs text-gray-500">Enter your secure PIN to authorize this transfer</p>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={handlePreviousStep}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-            </Button>
-            <Button onClick={handleNextStep}>
-              Review Transfer <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
-
-      {/* Step 4: Confirmation */}
-      {currentStep === 4 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center">
-              {processing ? (
-                <span>Processing Transfer...</span>
-              ) : successful ? (
-                <>
-                  <Check className="mr-2 h-5 w-5 text-green-500" />
-                  Transfer Successful
-                </>
-              ) : (
-                <>Confirm Transfer</>
-              )}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {processing ? (
-                <span>Please wait while we process your transfer</span>
-              ) : successful ? (
-                <span>Your transfer has been completed successfully</span>
-              ) : (
-                <span>Review and confirm your transfer details</span>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {processing ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <div className="w-16 h-16 border-4 border-t-blue-500 border-b-blue-500 border-l-gray-200 border-r-gray-200 rounded-full animate-spin mb-4"></div>
-                <p className="text-gray-500">Please do not close this window</p>
-              </div>
-            ) : successful ? (
-              <div className="space-y-6">
-                <div className="bg-green-50 border border-green-100 rounded-md p-4 text-center">
-                  <p className="text-green-800 font-medium">Reference Number: {transferReference}</p>
-                  <p className="text-sm text-green-600 mt-1">
-                    {isScheduled
-                      ? `Your transfer has been scheduled for ${scheduledDate}`
-                      : "Your transfer has been processed successfully"}
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex justify-between pb-2 border-b">
-                    <span className="text-gray-500">From Account</span>
-                    <span className="font-medium">
-                      {selectedAccount?.name} ({selectedAccount?.number})
-                    </span>
-                  </div>
-                  <div className="flex justify-between pb-2 border-b">
-                    <span className="text-gray-500">To</span>
-                    <span className="font-medium">
-                      {recipientName} - {bankName}
-                    </span>
-                  </div>
-                  <div className="flex justify-between pb-2 border-b">
-                    <span className="text-gray-500">Amount</span>
-                    <span className="font-medium">{formatCurrency(Number.parseFloat(amount))}</span>
-                  </div>
-                  <div className="flex justify-between pb-2 border-b">
-                    <span className="text-gray-500">Total</span>
-                    <span className="font-bold">{formatCurrency(Number.parseFloat(amount))}</span>
-                  </div>
-                  {description && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-gray-500">Description</span>
-                      <span className="font-medium">{description}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Date</span>
-                    <span className="font-medium">
-                      {isScheduled
-                        ? scheduledDate
-                        : new Date().toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-100 rounded-md p-4">
-                  <h3 className="font-medium text-blue-800 mb-2">Transfer Summary</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Transfer amount</span>
-                      <span className="font-medium">{formatCurrency(Number.parseFloat(amount))}</span>
-                    </div>
-                    <div className="flex justify-between pt-2 border-t">
-                      <span className="font-medium">Total</span>
-                      <span className="font-bold">{formatCurrency(Number.parseFloat(amount))}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex justify-between pb-2 border-b">
-                    <span className="text-gray-500">From Account</span>
-                    <span className="font-medium">
-                      {selectedAccount?.name} ({selectedAccount?.number})
-                    </span>
-                  </div>
-                  <div className="flex justify-between pb-2 border-b">
-                    <span className="text-gray-500">To</span>
-                    <span className="font-medium">
-                      {recipientName} - {bankName}
-                    </span>
-                  </div>
-                  <div className="flex justify-between pb-2 border-b">
-                    <span className="text-gray-500">Account Number</span>
-                    <span className="font-medium">{accountNumber}</span>
-                  </div>
-                  {routingNumber && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-gray-500">Routing/SWIFT</span>
-                      <span className="font-medium">{routingNumber}</span>
-                    </div>
-                  )}
-                  {description && (
-                    <div className="flex justify-between pb-2 border-b">
-                      <span className="text-gray-500">Description</span>
-                      <span className="font-medium">{description}</span>
-                    </div>
-                  )}
-                  {isScheduled && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Scheduled Date</span>
-                      <span className="font-medium">{scheduledDate}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className={`${successful ? "justify-center" : "justify-between"}`}>
-            {successful ? (
-              <div className="flex flex-col space-y-3 w-full">
-                <Button className="w-full" onClick={() => router.push("/dashboard")}>
-                  Return to Dashboard
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setCurrentStep(1)
-                    setProgress(25)
-                    setAmount("")
-                    setRecipientName("")
-                    setAccountNumber("")
-                    setBankName("")
-                    setRoutingNumber("")
-                    setDescription("")
-                    setIsScheduled(false)
-                    setScheduledDate("")
-                    setAcceptedTerms(false)
-                    setSuccessful(false)
-                    setPin("")
-                    setPinError("")
-                  }}
+              {/* Recipient Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Recipient Information</h3>
+                <Tabs
+                  defaultValue="existing"
+                  onValueChange={(value) => form.setValue("recipientType", value as "existing" | "new")}
                 >
-                  Make Another Transfer
-                </Button>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="existing">Existing Recipient</TabsTrigger>
+                    <TabsTrigger value="new">New Recipient</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="existing" className="space-y-4 pt-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <Input
+                        placeholder="Search recipients..."
+                        className="pl-10"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="recipient"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Select Recipient</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a recipient" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {filteredRecipients.map((recipient) => (
+                                <SelectItem key={recipient.id} value={recipient.id}>
+                                  {recipient.name} - {recipient.bank}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                  <TabsContent value="new" className="space-y-4 pt-4">
+                    <FormField
+                      control={form.control}
+                      name="recipientName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recipient Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter recipient name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="recipientBank"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bank Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter bank name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {transferType === "domestic" ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="recipientAccountNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Account Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter account number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="recipientRoutingNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Routing Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter routing number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="country"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Recipient Country</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a country" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {countries.map((country) => (
+                                    <SelectItem key={country.code} value={country.code}>
+                                      {country.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="recipientAccountNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Account Number</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter account number" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        {country && (
+                          <>
+                            {["DE", "FR", "AE"].includes(country) && (
+                              <FormField
+                                control={form.control}
+                                name="ibanNumber"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>IBAN Number</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Enter IBAN number" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                            {["GB"].includes(country) && (
+                              <FormField
+                                control={form.control}
+                                name="sortCode"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Sort Code</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Enter sort code (e.g., 12-34-56)" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                            <FormField
+                              control={form.control}
+                              name="swiftCode"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>SWIFT/BIC Code</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="Enter SWIFT/BIC code" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="saveRecipient"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Save this recipient for future transfers</FormLabel>
+                            <FormDescription>This will add the recipient to your saved recipients list</FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
-            ) : processing ? null : (
-              <>
-                <Button variant="outline" onClick={handlePreviousStep}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                </Button>
-                <Button onClick={handleNextStep}>
-                  Confirm Transfer <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </CardFooter>
-        </Card>
-      )}
+
+              {/* Transfer Details Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Transfer Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Amount</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <DollarSign
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                              size={16}
+                            />
+                            <Input placeholder="0.00" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {currencies.map((currency) => (
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.code} - {currency.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {amount && currency && currency !== "USD" && (
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <p className="text-sm text-gray-700">
+                      Exchange Rate: 1 {currency} = {(1 / exchangeRate).toFixed(4)} USD
+                    </p>
+                    <p className="text-sm font-medium text-gray-700">
+                      Converted Amount: {formatCurrency(Number.parseFloat(convertedAmount))}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="transferDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Transfer Date</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Calendar
+                              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                              size={16}
+                            />
+                            <Input type="date" className="pl-10" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="transferFrequency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Transfer Frequency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select frequency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="once">One-time transfer</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {transferType === "international" && (
+                  <FormField
+                    control={form.control}
+                    name="transferPurpose"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purpose of Transfer</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select purpose" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {transferPurposes.map((purpose) => (
+                              <SelectItem key={purpose.id} value={purpose.id}>
+                                {purpose.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>Required for regulatory compliance</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {transferType === "international" && (
+                  <FormField
+                    control={form.control}
+                    name="feePaymentOption"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fee Payment Option</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                          >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="sender" />
+                              </FormControl>
+                              <FormLabel className="font-normal">
+                                I will pay all fees (recipient receives full amount)
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="recipient" />
+                              </FormControl>
+                              <FormLabel className="font-normal">Recipient pays all fees</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="shared" />
+                              </FormControl>
+                              <FormLabel className="font-normal">Share fees (recommended)</FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="memo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Memo / Note (Optional)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <FileText className="absolute left-3 top-3 text-gray-400" size={16} />
+                          <Textarea
+                            placeholder="Add a note for this transfer"
+                            className="pl-10 min-h-[100px]"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        {transferType === "domestic"
+                          ? "This note is for your reference only and won't be sent to the recipient"
+                          : "This message will be included with the transfer"}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Transfer Summary */}
+              {fromAccount && amount && (
+                <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                  <h3 className="font-medium">Transfer Summary</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-gray-500">From:</div>
+                    <div>{accounts.find((acc) => acc.id === fromAccount)?.name}</div>
+
+                    <div className="text-gray-500">To:</div>
+                    <div>{form.getValues("recipientName") || "Not specified"}</div>
+
+                    <div className="text-gray-500">Amount:</div>
+                    <div className="font-medium">
+                      {amount ? formatCurrency(Number.parseFloat(amount), currency) : "Not specified"}
+                    </div>
+
+                    <div className="text-gray-500">Date:</div>
+                    <div>{form.getValues("transferDate")}</div>
+
+                    <div className="text-gray-500">Frequency:</div>
+                    <div>
+                      {form.getValues("transferFrequency") === "once"
+                        ? "One-time transfer"
+                        : form.getValues("transferFrequency") === "weekly"
+                          ? "Weekly"
+                          : form.getValues("transferFrequency") === "biweekly"
+                            ? "Bi-weekly"
+                            : "Monthly"}
+                    </div>
+
+                    {transferType === "international" && (
+                      <>
+                        <div className="text-gray-500">Estimated Delivery:</div>
+                        <div>2-5 business days</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Compliance Notice for International Transfers */}
+              {transferType === "international" && (
+                <Alert className="bg-amber-50 text-amber-800 border-amber-200">
+                  <AlertDescription>
+                    International transfers are subject to compliance checks and may require additional verification.
+                    Large transfers may be subject to additional documentation requirements.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={handleBackToDashboard}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : "Submit Transfer"}
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
     </div>
   )
 }
-

@@ -210,7 +210,7 @@ export default function BusinessDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+    <div className="min-h-screen flex flex-col bg-[#f8fafc] text-gray-800">
       {/* Header with Notifications */}
       <div className="bg-[#001f3f] text-white py-4 px-4">
         <div className="container mx-auto flex justify-between items-center">
@@ -257,29 +257,21 @@ export default function BusinessDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 mb-6 md:mb-8">
           {/* Balance Card - Made smaller than ATM card and centered on mobile */}
           <div className="md:col-span-3 mx-auto md:mx-0" style={{ maxWidth: "300px" }}>
-            <Card className="bg-gray-800 border-gray-700 text-white shadow-xl overflow-hidden h-full">
-              <CardHeader className="pb-2 border-b border-gray-700">
-                <CardTitle className="flex justify-between items-center text-base">
-                  <span>Business Account</span>
-                  <button onClick={() => setHideBalance(!hideBalance)} className="text-gray-400 hover:text-white">
-                    {hideBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-3 pb-3">
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-sm text-gray-400">Available Balance</p>
-                    <p className="text-lg md:text-xl font-bold mt-1 break-words">
-                      {hideBalance ? "••••••••" : formatCurrency(businessData.balance)}
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center text-gray-400 text-xs">
-                    <span className="mr-2">Account No:</span>
-                    <span className="text-blue-400 font-mono">{businessData.accountNumber}</span>
-                  </div>
+            <Card className="bg-white rounded-xl shadow-sm p-4 w-full h-auto">
+              <div className="text-gray-600 text-sm mb-1">Your Total Balance</div>
+              <div className="flex items-center justify-between">
+                <div className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
+                  {hideBalance ? "••••••••" : formatCurrency(businessData.balance)}
                 </div>
-              </CardContent>
+                <button onClick={() => setHideBalance(!hideBalance)} className="text-gray-400 hover:text-gray-600">
+                  {hideBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+              </div>
+              <div className="flex items-center text-gray-700 text-sm">
+                <span className="font-medium mr-2">Business Account</span>
+                <span className="text-gray-500 mr-1">Acct No:</span>
+                <span className="text-[#0066cc]">{businessData.accountNumber}</span>
+              </div>
             </Card>
           </div>
 
@@ -387,7 +379,7 @@ export default function BusinessDashboard() {
         {/* Business Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 md:mb-8">
           {businessMetrics.map((metric) => (
-            <Card key={metric.id} className="bg-gray-800 border-gray-700 text-white business-metric-card">
+            <Card key={metric.id} className="bg-white border-gray-200 text-gray-800 business-metric-card">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-medium text-gray-400">{metric.label}</h3>
@@ -424,13 +416,13 @@ export default function BusinessDashboard() {
         </div>
 
         {/* Transaction History with Modal Details */}
-        <Card className="bg-gray-800 border-gray-700 text-white shadow-xl overflow-hidden mb-20">
-          <CardHeader className="pb-2 border-b border-gray-700 flex flex-row justify-between items-center">
+        <Card className="bg-white border-gray-200 text-gray-800 shadow-sm overflow-hidden mb-20">
+          <CardHeader className="pb-2 border-b border-gray-200 flex flex-row justify-between items-center">
             <CardTitle>Recent Transactions</CardTitle>
             <Button
               variant="outline"
               size="sm"
-              className="text-gray-300 hover:text-white border-gray-600 hover:border-gray-500"
+              className="text-gray-600 hover:text-gray-800 border-gray-300 hover:border-gray-400"
               onClick={() => router.push("/dashboard/transactions")}
             >
               <Clock className="h-4 w-4 mr-1" /> View All
@@ -438,21 +430,21 @@ export default function BusinessDashboard() {
           </CardHeader>
           <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 pb-2">
             <table className="w-full min-w-[800px] business-table">
-              <thead className="bg-gray-900">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="py-3 px-4 text-left text-gray-400 text-xs md:text-sm">Date</th>
-                  <th className="py-3 px-4 text-left text-gray-400 text-xs md:text-sm">Description</th>
-                  <th className="py-3 px-4 text-left text-gray-400 text-xs md:text-sm">Reference</th>
-                  <th className="py-3 px-4 text-left text-gray-400 text-xs md:text-sm">Category</th>
-                  <th className="py-3 px-4 text-right text-gray-400 text-xs md:text-sm">Amount</th>
-                  <th className="py-3 px-4 text-right text-gray-400 text-xs md:text-sm"></th>
+                  <th className="py-3 px-4 text-left text-gray-500 text-xs md:text-sm">Date</th>
+                  <th className="py-3 px-4 text-left text-gray-500 text-xs md:text-sm">Description</th>
+                  <th className="py-3 px-4 text-left text-gray-500 text-xs md:text-sm">Reference</th>
+                  <th className="py-3 px-4 text-left text-gray-500 text-xs md:text-sm">Category</th>
+                  <th className="py-3 px-4 text-right text-gray-500 text-xs md:text-sm">Amount</th>
+                  <th className="py-3 px-4 text-right text-gray-500 text-xs md:text-sm"></th>
                 </tr>
               </thead>
               <tbody>
                 {transactionsData.slice(0, 4).map((transaction) => (
                   <tr
                     key={transaction.id}
-                    className="border-b border-gray-700 hover:bg-gray-750 cursor-pointer"
+                    className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
                     onClick={() => handleTransactionClick(transaction)}
                   >
                     <td className="py-3 px-4 text-gray-300 text-xs md:text-sm">{transaction.date}</td>
@@ -498,7 +490,7 @@ export default function BusinessDashboard() {
       {/* Transaction Details Modal */}
       {selectedTransaction && (
         <Dialog open={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)}>
-          <DialogContent className="sm:max-w-md bg-gray-800 text-white border-gray-700">
+          <DialogContent className="sm:max-w-md bg-white text-gray-800 border-gray-200">
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <h3 className="text-lg font-semibold text-white">Transaction Details</h3>
@@ -555,7 +547,7 @@ export default function BusinessDashboard() {
 
               <div className="border-t border-gray-700 pt-4 flex justify-end space-x-3">
                 <button
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-sm font-medium text-white"
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium text-gray-800"
                   onClick={() => setSelectedTransaction(null)}
                 >
                   Close
@@ -729,4 +721,3 @@ export default function BusinessDashboard() {
     </div>
   )
 }
-

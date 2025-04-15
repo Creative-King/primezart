@@ -2,6 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Crypto ticker animation */
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  background-color: #003366;
+  padding: 0;
+  height: 2.5rem;
+}
+
+.ticker {
+  display: inline-flex;
+  white-space: nowrap;
+  padding-right: 100%;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  animation-name: ticker;
+  animation-duration: 30s;
+}
+
+.ticker-item {
+  display: inline-flex;
+  padding: 0 2rem;
+  align-items: center;
+}
+
+@keyframes ticker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -74,200 +108,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-/* ATM Card Styles */
-.flip-card {
-  perspective: 1000px;
-  height: 200px;
-  width: 320px;
-  max-width: 100%;
-}
-
-.flip-card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  text-align: left;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.is-flipped {
-  transform: rotateY(180deg);
-}
-
-.flip-card-front,
-.flip-card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.flip-card-front {
-  background-color: #1e293b;
-  color: white;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.flip-card-front.business {
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-}
-
-.flip-card-back {
-  background-color: #334155;
-  color: white;
-  transform: rotateY(180deg);
-  padding: 0;
-}
-
-.flip-card-back.business {
-  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-}
-
-.card-chip {
-  width: 40px;
-  height: 30px;
-  background: linear-gradient(135deg, #d4af37 0%, #f2d272 50%, #d4af37 100%);
-  border-radius: 5px;
-  margin-right: 10px;
-  position: relative;
-  overflow: hidden;
-}
-
-.card-chip::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 5px;
-  right: 5px;
-  height: 1px;
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.card-chip::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 5px;
-  bottom: 5px;
-  width: 1px;
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-.card-brand {
-  display: flex;
-}
-
-.card-brand-circle {
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-}
-
-.card-brand-circle.blue {
-  background-color: #1a56db;
-  opacity: 0.8;
-}
-
-.card-brand-circle.light-blue {
-  background-color: #60a5fa;
-  opacity: 0.8;
-  margin-left: -10px;
-}
-
-.card-number {
-  letter-spacing: 2px;
-}
-
-.card-holder-name {
-  text-transform: uppercase;
-}
-
-.magnetic-strip {
-  width: 100%;
-  height: 40px;
-  background-color: #111827;
-  margin-top: 20px;
-}
-
-.signature-strip {
-  height: 40px;
-  background-color: #f3f4f6;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  font-style: italic;
-}
-
-.flip-hint {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  opacity: 0.5;
-}
-
-.circuit-pattern {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  opacity: 0.1;
-}
-
-.circuit-line {
-  position: absolute;
-}
-
-/* Business dashboard styles */
-.business-metric-card {
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.business-metric-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-.business-table th,
-.business-table td {
-  white-space: nowrap;
-}
-
-/* Ensure card text doesn't overflow on mobile */
-.card-number,
-.card-holder-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-@media (max-width: 640px) {
-  .flip-card {
-    height: 180px;
-    width: 280px;
-  }
-
-  .card-number {
-    font-size: 0.9rem;
-  }
-
-  .card-holder-name {
-    font-size: 0.8rem;
-    max-width: 100px;
-  }
-}
-
