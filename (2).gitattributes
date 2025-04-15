@@ -1,2 +1,11 @@
-# Auto detect text files and perform LF normalization
+const [emailBody, setEmailBody] = useState("")const handleSaveSettings = (settingType: string) => {
+  if (!["general", "notification", "security", "email"].includes(settingType)) {
+    console.error("Invalid setting type:", settingType)
+    return
+  }
+  toast({
+    title: "Settings Saved",
+    description: `Your ${settingType} settings have been updated successfully.`,
+  })
+}# Auto detect text files and perform LF normalization
 * text=auto

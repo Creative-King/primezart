@@ -19,11 +19,11 @@ export default function Home() {
         </div>
 
         {/* Content */}
-        <div className="container mx-auto grid md:grid-cols-2 gap-8 py-12 relative z-20">
+        <div className="container relative z-20 grid gap-8 py-12 mx-auto md:grid-cols-2">
           {/* Left side - Hero Content */}
           <div className="flex flex-col justify-center">
-            <p className="text-lg mb-2">Explore the Financial Future</p>
-            <h1 className="text-5xl font-bold mb-2">
+            <p className="mb-2 text-lg">Explore the Financial Future</p>
+            <h1 className="mb-2 text-5xl font-bold">
               Bank
               <br />
               Online On
@@ -34,14 +34,14 @@ export default function Home() {
             <div className="flex flex-wrap gap-4">
               <Link href="/enroll">
                 <Button className="bg-[#0047ab] hover:bg-[#003d91] text-white px-6 py-6 h-auto">
-                  Enroll Now <ArrowRight className="ml-2 h-4 w-4" />
+                  Enroll Now <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
             </div>
           </div>
 
           {/* Right side - Login Form */}
-          <div className="flex justify-center md:justify-end items-center">
+          <div className="flex items-center justify-center md:justify-end">
             <LoginForm />
           </div>
         </div>
@@ -51,9 +51,9 @@ export default function Home() {
       <div className="py-16 bg-white">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12 text-[#003366]">Our Banking Solutions</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center p-6 border rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-full h-48 mb-6 relative rounded-md overflow-hidden">
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="flex flex-col items-center p-6 text-center transition-shadow border rounded-lg hover:shadow-lg">
+              <div className="relative w-full h-48 mb-6 overflow-hidden rounded-md">
                 <Image src="/images/personal-banking-sign.jpg" alt="Personal Banking" fill className="object-cover" />
               </div>
               <div className="w-16 h-16 bg-[#f0a500] rounded-full flex items-center justify-center mb-4">
@@ -62,7 +62,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2 text-[#003366]">Personal Banking</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="mb-4 text-gray-600">
                 Manage your everyday finances with our comprehensive personal banking solutions.
               </p>
               <Link href="/services/personal" className="text-[#003366] font-semibold hover:text-[#f0a500]">
@@ -70,8 +70,8 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="flex flex-col items-center text-center p-6 border rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-full h-48 mb-6 relative rounded-md overflow-hidden">
+            <div className="flex flex-col items-center p-6 text-center transition-shadow border rounded-lg hover:shadow-lg">
+              <div className="relative w-full h-48 mb-6 overflow-hidden rounded-md">
                 <Image src="/images/investment-coins.jpg" alt="Investment Services" fill className="object-cover" />
               </div>
               <div className="w-16 h-16 bg-[#f0a500] rounded-full flex items-center justify-center mb-4">
@@ -80,7 +80,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2 text-[#003366]">Investment Services</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="mb-4 text-gray-600">
                 Grow your wealth with our expert investment advice and diverse portfolio options.
               </p>
               <Link href="/services/investments" className="text-[#003366] font-semibold hover:text-[#f0a500]">
@@ -88,8 +88,8 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="flex flex-col items-center text-center p-6 border rounded-lg hover:shadow-lg transition-shadow">
-              <div className="w-full h-48 mb-6 relative rounded-md overflow-hidden">
+            <div className="flex flex-col items-center p-6 text-center transition-shadow border rounded-lg hover:shadow-lg">
+              <div className="relative w-full h-48 mb-6 overflow-hidden rounded-md">
                 <Image src="/images/business-charts-money.jpg" alt="Business Banking" fill className="object-cover" />
               </div>
               <div className="w-16 h-16 bg-[#f0a500] rounded-full flex items-center justify-center mb-4">
@@ -98,7 +98,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold mb-2 text-[#003366]">Business Banking</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="mb-4 text-gray-600">
                 Support your business growth with our tailored financial solutions and services.
               </p>
               <Link href="/services/business" className="text-[#003366] font-semibold hover:text-[#f0a500]">
@@ -113,7 +113,7 @@ export default function Home() {
       <div className="py-16 bg-gray-50">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12 text-[#003366]">What Our Customers Say</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid gap-8 md:grid-cols-3">
             {[
               {
                 name: "Sarah Johnson",
@@ -134,7 +134,7 @@ export default function Home() {
                   "I love how easy it is to manage my finances with Primezart's mobile app. The customer service is always helpful and responsive.",
               },
             ].map((testimonial, index) => (
-              <div key={index} className="bg-white p-6 rounded-lg shadow-md">
+              <div key={index} className="p-6 bg-white rounded-lg shadow-md">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-[#003366] rounded-full flex items-center justify-center text-white font-bold text-xl">
                     {testimonial.name.charAt(0)}
@@ -144,7 +144,7 @@ export default function Home() {
                     <p className="text-sm text-gray-600">{testimonial.role}</p>
                   </div>
                 </div>
-                <p className="text-gray-700 italic">"{testimonial.quote}"</p>
+                <p className="italic text-gray-700">"{testimonial.quote}"</p>
               </div>
             ))}
           </div>

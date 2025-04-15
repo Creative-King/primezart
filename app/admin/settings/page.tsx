@@ -191,7 +191,7 @@ export default function AdminSettings() {
                     <Switch 
                       id="new-users" 
                       checked={notificationSettings.newUsers}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked: boolean) => ...}
                         setNotificationSettings({...notificationSettings, newUsers: checked})
                       }
                     />
