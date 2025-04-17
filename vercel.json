@@ -2,19 +2,19 @@
     "routes": [
         {
             "src": "/",
-            "dest": "/index.html" // Redirect root to an index page
+            "dest": "/index.html"
         },
         {
             "src": "/test",
-            "dest": "/test-page" // Redirect /test to a specific page
+            "dest": "/test-page"
         },
         {
             "src": "/api/(.*)",
-            "dest": "/api/$1" // Redirect API requests to the API folder
+            "dest": "/api/$1"
         },
         {
             "src": "/static/(.*)",
-            "dest": "/public/static/$1" // Serve static files from the public/static folder
+            "dest": "/public/static/$1"
         }
     ]
 }
