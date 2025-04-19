@@ -20,5 +20,11 @@
   "bugs": {
     "url": "https://github.com/Creative-King/primezart/issues"
   },
-  "homepage": "https://github.com/Creative-King/primezart#readme"
+  "homepage": "https://github.com/Creative-King/primezart#readme",
+  
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.4.24"
+  }
 }
